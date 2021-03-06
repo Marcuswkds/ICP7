@@ -1,0 +1,88 @@
+# Importing packages for web scraping and modules from nltk
+import requests
+from bs4 import BeautifulSoup
+import re
+from nltk.tokenize import sent_tokenize, word_tokenize
+from nltk import pos_tag
+from nltk.stem import PorterStemmer, LancasterStemmer, SnowballStemmer, WordNetLemmatizer
+from nltk import ngrams, ne_chunk
+
+html = requests.get("https://en.wikipedia.org/wiki/Google")  # Scraping information from webpage.
+beautSoup = BeautifulSoup(html.content, "html.parser")  # Parsing the webpage content.
+
+# Text extraction.
+paras = []
+for paragraph in beautSoup.find_all('p'):
+    paras.append(str(paragraph.text))
+heads = []
+for head in beautSoup.find_all('span', attrs={'mw-headline'}):
+    heads.append(str(head.text))
+text = [val for pair in zip(paras, heads) for val in pair]
+text = '\n '.join(text)
+text = re.sub(r"\[.*?\]+", '', text)
+
+output = open("input.txt", "w")  # Opening and writing to the input file.
+output.write(text)  # Writing the content to the file
+
+input = open("input.txt", "r")  # Opening and reading the input file.
+corpusData = input.read()
+corpusData = corpusData.replace('\n', '')  # Removing the newLine
+
+# Tokenization
+stokens = sent_tokenize(corpusData)  # Tokenization for sentences.
+wtokens = word_tokenize(corpusData)  # Tokenization for words.
+
+print("Sentence Tokens: ")
+for idx in range(11):  # Printing the first 10 sentence tokens.
+    print(stokens[idx])
+print("Word Tokens: ")
+print(wtokens[:10])  # Printing the first 10 word tokens.
+
+# Parts of Speech (POS)
+print("POS: ")
+pos = pos_tag(wtokens)  # POS in the list of words.
+print(pos)  # Printing POS
+
+# Stemming.
+print("Stemming: ")
+lancasterStem = LancasterStemmer()
+porterStem = PorterStemmer()
+snowballStem = SnowballStemmer('english')
+lStemWords = []
+pStemWords = []
+sStemWords = []
+
+for word in wtokens:
+    lStemWords.append((word + " : " + lancasterStem.stem(word)))
+    pStemWords.append((word + " : " + porterStem.stem(word)))
+    sStemWords.append((word + " : " + snowballStem.stem(word)))
+
+# Printing the words after stemming.
+print("Lancaster Stemmer")
+print(lStemWords)
+print("Porter Stemmer")
+print(pStemWords)
+print("Snowball Stemmer")
+print(sStemWords)
+
+# Lemmatization.
+print("WordNet Lemmatization: ")
+lem = WordNetLemmatizer()
+wordNetLemmatizerWord = []
+for word in wtokens:
+    wordNetLemmatizerWord.append(
+        (word + " : " + lem.lemmatize(word)))
+print(wordNetLemmatizerWord[:10])
+
+# Trigram
+trigrams = ngrams(wtokens, 3)
+
+# Printing the first 10 trigrams
+print("Trigrams: ")
+for trigram in trigrams:
+    print(trigram[0:10])
+
+# Named Entity Recognition
+namedEntityRecognition = ne_chunk(pos_tag(wtokens))
+print("Named Entity Recognition: ")
+print(namedEntityRecognition[:25])  # Printing the first 25 words in the sentence.
